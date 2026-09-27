@@ -12,8 +12,8 @@ OUTPUT_PATH = Path("output/baseline-aws-resume-01/threshold_sweep.tsv")
 CHUNK_SIZE = 1_000_000
 
 THRESHOLDS = np.round(
-    np.arange(0.50, 0.901, 0.01),
-    2,
+    np.arange(0.785, 0.816, 0.001),
+    3,
 )
 
 
