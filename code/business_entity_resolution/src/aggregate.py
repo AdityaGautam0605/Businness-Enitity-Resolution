@@ -1,23 +1,20 @@
+"""Collapse pair decisions to the submission contract."""
 import pandas as pd
+from blocking import PAIR_COLUMNS
 
-def aggregate_to_tsv_format(all_s1_ids: list, pairwise_df: pd.DataFrame, target_col_name: str) -> pd.DataFrame:
-    """
-    Collapses pairwise records into one row per Source 1 ID.
-    Singletons receive empty strings.
-    """
-    base_df = pd.DataFrame({"source1_entity_id": list(all_s1_ids)})
 
-    if pairwise_df.empty:
-        base_df[target_col_name] = ""
-        return base_df
-
-    grouped = (
-        pairwise_df.groupby("source1_entity_id")["target_entity_id"]
-        .apply(lambda ids: ",".join(sorted(set(str(x) for x in ids if str(x).strip()))))
-        .reset_index()
-        .rename(columns={"target_entity_id": target_col_name})
-    )
-
-    result = pd.merge(base_df, grouped, on="source1_entity_id", how="left")
-    result[target_col_name] = result[target_col_name].fillna("")
-    return result[["source1_entity_id", target_col_name]]
+def aggregate_to_tsv_format(all_s1_ids, pairwise_df, target_col_name):
+    ids = list(all_s1_ids)
+    if len(set(ids)) != len(ids):
+        raise ValueError("Aggregation requires unique Source 1 IDs")
+    if set(pairwise_df.source1_entity_id) - set(ids):
+        raise ValueError("Pairwise data contains unknown Source 1 IDs")
+    grouped = {}
+    for source, target in pairwise_df[PAIR_COLUMNS].itertuples(index=False, name=None):
+        if not isinstance(target, str) or not target or target != target.strip() or "," in target:
+            raise ValueError("Invalid target ID during aggregation")
+        grouped.setdefault(source, set()).add(target)
+    return pd.DataFrame({
+        "source1_entity_id": ids,
+        target_col_name: [",".join(sorted(grouped.get(source, set()))) for source in ids],
+    })

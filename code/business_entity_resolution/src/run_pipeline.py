@@ -1,67 +1,34 @@
-import os
-import sys
-import time
+"""Run a baseline, train a classifier, or predict with a saved model."""
 import argparse
-import pandas as pd
+from config import PipelineConfig
+from pipeline import execute_pipeline
 
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
 
-from normalize import normalize_dataset
-from blocking import generate_candidate_pairs
-from features import compute_pairwise_features
-from model import predict_matches
-from aggregate import aggregate_to_tsv_format
-from validate import validate_outputs
+def run(s1_path, s2_path, s3_path, out_dir, **kwargs):
+    """Backward-compatible Python entry point; defaults to the baseline."""
+    return execute_pipeline(s1_path, s2_path, s3_path, out_dir, **kwargs)
 
-def run(s1_path: str, s2_path: str, s3_path: str, out_dir: str):
-    total_start = time.time()
-    os.makedirs(out_dir, exist_ok=True)
-    match_file = os.path.join(out_dir, "matching_results.tsv")
-    cand_file = os.path.join(out_dir, "candidate_pairs.tsv")
 
-    print("[1/5] Ingesting & Normalizing Sources...")
-    s1_df = pd.read_csv(s1_path, sep="\t", dtype=str)
-    s2_df = pd.read_csv(s2_path, sep="\t", dtype=str)
-    s3_df = pd.read_csv(s3_path, sep="\t", dtype=str)
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--s1", required=True, help="Source 1 TSV")
+    parser.add_argument("--s2", required=True, help="Source 2 TSV")
+    parser.add_argument("--s3", required=True, help="Source 3 TSV")
+    parser.add_argument("--out", default="output", help="New or empty run directory")
+    parser.add_argument("--mode", choices=("baseline", "train", "predict"), default="baseline")
+    parser.add_argument("--truth", help="Ground truth TSV; required for training, optional for evaluation")
+    parser.add_argument("--model", help="Saved model input in predict mode; optional output path in train mode")
+    parser.add_argument("--config", help="JSON settings; predict defaults to the saved model settings")
+    parser.add_argument("--threshold", type=float, help="Override baseline/predict threshold, in [0,1]")
+    parser.add_argument("--save-intermediates", action="store_true", help="Save normalized data and pair features")
+    args = parser.parse_args()
+    try:
+        run(args.s1, args.s2, args.s3, args.out, mode=args.mode, truth_path=args.truth,
+            model_path=args.model, config=PipelineConfig.load(args.config) if args.config else None,
+            threshold=args.threshold, save_intermediates=args.save_intermediates)
+    except (ValueError, OSError, KeyError) as exc:
+        parser.exit(1, f"Pipeline failed: {exc}\n")
 
-    target_combined = pd.concat([s2_df, s3_df], ignore_index=True)
-
-    s1_norm = normalize_dataset(s1_df)
-    target_norm = normalize_dataset(target_combined)
-
-    print("[2/5] Running Blocking / Candidate Generation...")
-    candidate_pairs = generate_candidate_pairs(s1_norm, target_norm)
-    all_s1_ids = s1_df["entity_id"].dropna().unique()
-
-    cand_aggregated = aggregate_to_tsv_format(all_s1_ids, candidate_pairs, "candidate_entity_ids")
-    cand_aggregated.to_csv(cand_file, sep="\t", index=False)
-    print(f"      Saved {cand_file} ({len(candidate_pairs)} candidate pairs shortlisted)")
-
-    print("[3/5] Extracting Pairwise Features...")
-    features = compute_pairwise_features(candidate_pairs, s1_norm, target_norm)
-
-    print("[4/5] ML Matching Inference & Precision Thresholding...")
-    matches_pairwise = predict_matches(features)
-
-    print("[5/5] Aggregating Final Matches...")
-    matches_aggregated = aggregate_to_tsv_format(all_s1_ids, matches_pairwise, "matched_entity_ids")
-    matches_aggregated.to_csv(match_file, sep="\t", index=False)
-    print(f"      Saved {match_file}")
-
-    print(f"[*] Pipeline finished in {time.time() - total_start:.2f}s")
-
-    if not validate_outputs(match_file, cand_file, s1_path, s2_path, s3_path):
-        print("[CRITICAL] Pipeline outputs failed validation!")
-        sys.exit(1)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--s1", required=True)
-    parser.add_argument("--s2", required=True)
-    parser.add_argument("--s3", required=True)
-    parser.add_argument("--out", default="output")
-    args = parser.parse_args()
-
-    run(args.s1, args.s2, args.s3, args.out)
+    main()

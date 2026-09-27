@@ -1,63 +1,116 @@
-import sys
+"""ML-3: entity-level macro F0.5, error analysis, and threshold selection."""
+import argparse
+from collections import defaultdict
+import numpy as np
 import pandas as pd
+from data_io import read_id_lists, write_json
+from blocking import PAIR_COLUMNS
 
-def compute_macro_f05(pred_file: str, ground_truth_file: str, dump_error_tsv: str = None):
-    pred_df = pd.read_csv(pred_file, sep="\t", dtype=str, keep_default_na=False)
-    truth_df = pd.read_csv(ground_truth_file, sep="\t", dtype=str, keep_default_na=False)
+ERROR_COLUMNS = ["source1_entity_id", "ground_truth", "predicted", "false_positives", "false_negatives"]
 
-    preds = {r["source1_entity_id"]: set([x.strip() for x in r["matched_entity_ids"].split(",") if x.strip()])
-             for _, r in pred_df.iterrows()}
-    truths = {r["source1_entity_id"]: set([x.strip() for x in r["matched_entity_ids"].split(",") if x.strip()])
-              for _, r in truth_df.iterrows()}
 
-    f05_scores = []
-    error_records = []
-    beta = 0.5
-    beta_sq = beta ** 2
+def entity_f05(tp, predicted_count, truth_count):
+    if truth_count == 0:
+        return float(predicted_count == 0)
+    # Equivalent to beta=0.5 F-score, including the tp=0 case.
+    return 1.25 * tp / (0.25 * truth_count + predicted_count)
 
-    for s1_id, y_true in truths.items():
-        y_pred = preds.get(s1_id, set())
 
-        if len(y_true) == 0:
-            score = 1.0 if len(y_pred) == 0 else 0.0
-        else:
-            tp = len(y_true & y_pred)
-            fp = len(y_pred - y_true)
-            fn = len(y_true - y_pred)
+def prediction_sets(pairs):
+    result = defaultdict(set)
+    for source, target in pairs[PAIR_COLUMNS].itertuples(index=False, name=None):
+        result[source].add(target)
+    return dict(result)
 
-            if tp == 0:
-                score = 0.0
-            else:
-                p = tp / (tp + fp)
-                r = tp / (tp + fn)
-                score = (1 + beta_sq) * (p * r) / ((beta_sq * p) + r)
 
-        f05_scores.append(score)
+def evaluate_sets(predictions, truth):
+    if not truth:
+        raise ValueError("Evaluation requires at least one labeled Source 1 entity")
+    scores, errors = [], []
+    total_tp = total_fp = total_fn = 0
+    for source, expected in truth.items():
+        predicted = predictions.get(source, set())
+        tp, fp, fn = len(predicted & expected), len(predicted - expected), len(expected - predicted)
+        total_tp += tp
+        total_fp += fp
+        total_fn += fn
+        scores.append(entity_f05(tp, len(predicted), len(expected)))
+        if predicted != expected:
+            errors.append(dict(zip(ERROR_COLUMNS, [
+                source, ",".join(sorted(expected)), ",".join(sorted(predicted)),
+                ",".join(sorted(predicted - expected)), ",".join(sorted(expected - predicted))
+            ])))
+    report = {
+        "macro_f05": float(np.mean(scores)), "evaluated_entities": len(truth),
+        "singleton_entities": sum(not ids for ids in truth.values()),
+        "true_positives": total_tp, "false_positives": total_fp, "false_negatives": total_fn,
+        "micro_precision": total_tp / (total_tp + total_fp) if total_tp + total_fp else 0.0,
+        "micro_recall": total_tp / (total_tp + total_fn) if total_tp + total_fn else 0.0,
+    }
+    return report, pd.DataFrame(errors, columns=ERROR_COLUMNS)
 
-        if y_true != y_pred and dump_error_tsv:
-            error_records.append({
-                "source1_entity_id": s1_id,
-                "ground_truth": ",".join(sorted(y_true)),
-                "predicted": ",".join(sorted(y_pred)),
-                "false_positives": ",".join(sorted(y_pred - y_true)),
-                "false_negatives": ",".join(sorted(y_true - y_pred))
-            })
 
-    macro_f05 = sum(f05_scores) / len(f05_scores) if f05_scores else 0.0
-    print("=" * 45)
-    print(f" Macro F_0.5 Evaluation Score: {macro_f05:.5f}")
-    print(f" Evaluated over {len(f05_scores)} Source 1 records")
-    print("=" * 45)
+def tune_threshold(scored_pairs, truth):
+    """Exact O(P log P) sweep; ties prefer the higher, more conservative threshold."""
+    if not truth:
+        raise ValueError("Threshold tuning requires ground truth")
+    scores = scored_pairs["score"].to_numpy(dtype=float)
+    if not np.isfinite(scores).all() or ((scores < 0) | (scores > 1)).any():
+        raise ValueError("Scores must be finite and in [0, 1]")
+    if scored_pairs.duplicated(PAIR_COLUMNS).any():
+        raise ValueError("Threshold tuning requires unique pairs")
+    active = scored_pairs[scored_pairs.source1_entity_id.isin(truth)].sort_values("score", ascending=False)
+    counts, positives = defaultdict(int), defaultdict(int)
+    total = float(sum(not ids for ids in truth.values()))
+    best_score, best_threshold = total / len(truth), float(np.nextafter(1.0, 2.0))
+    curve = [{"threshold": best_threshold, "macro_f05": best_score}]
+    for threshold, batch in active.groupby("score", sort=False):
+        for source, target in batch[PAIR_COLUMNS].itertuples(index=False, name=None):
+            n_true = len(truth[source])
+            total -= entity_f05(positives[source], counts[source], n_true)
+            counts[source] += 1
+            positives[source] += int(target in truth[source])
+            total += entity_f05(positives[source], counts[source], n_true)
+        current = total / len(truth)
+        curve.append({"threshold": float(threshold), "macro_f05": current})
+        if current > best_score + 1e-12:
+            best_score, best_threshold = current, float(threshold)
+    return best_threshold, pd.DataFrame(curve)
 
-    if dump_error_tsv and error_records:
-        pd.DataFrame(error_records).to_csv(dump_error_tsv, sep="\t", index=False)
-        print(f"[*] Discrepancies exported to: {dump_error_tsv}")
 
-    return macro_f05
+def compute_macro_f05(pred_file, ground_truth_file, dump_error_tsv=None):
+    predictions = read_id_lists(pred_file, "matched_entity_ids")
+    truth = read_id_lists(ground_truth_file, "matched_entity_ids")
+    if set(truth) - set(predictions):
+        raise ValueError("Predictions must include every labeled Source 1 ID")
+    report, errors = evaluate_sets(predictions, truth)
+    if dump_error_tsv:
+        errors.to_csv(dump_error_tsv, sep="\t", index=False)
+    print(f"Macro F0.5: {report['macro_f05']:.6f} over {report['evaluated_entities']} entities")
+    return report["macro_f05"]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("predictions")
+    parser.add_argument("ground_truth")
+    parser.add_argument("errors", nargs="?")
+    parser.add_argument("--report")
+    args = parser.parse_args()
+    try:
+        predictions = read_id_lists(args.predictions, "matched_entity_ids")
+        truth = read_id_lists(args.ground_truth, "matched_entity_ids")
+        if set(truth) - set(predictions):
+            raise ValueError("Predictions must include every labeled Source 1 ID")
+        report, errors = evaluate_sets(predictions, truth)
+        if args.errors:
+            errors.to_csv(args.errors, sep="\t", index=False)
+        if args.report:
+            write_json(args.report, report)
+        print(f"Macro F0.5: {report['macro_f05']:.6f}")
+    except (ValueError, OSError) as exc:
+        parser.exit(1, f"Evaluation failed: {exc}\n")
+
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python src/evaluate.py <predictions.tsv> <train_ground_truth.tsv> [out_errors.tsv]")
-        sys.exit(1)
-    err_file = sys.argv[3] if len(sys.argv) > 3 else None
-    compute_macro_f05(sys.argv[1], sys.argv[2], err_file)
+    main()

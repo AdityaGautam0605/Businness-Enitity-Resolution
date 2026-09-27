@@ -1,0 +1,180 @@
+test_address_pass_recovers_name_typo (test_pipeline.BlockingFeatureTests.test_address_pass_recovers_name_typo) ... ok
+test_best_candidate_survives_cap_and_shuffle (test_pipeline.BlockingFeatureTests.test_best_candidate_survives_cap_and_shuffle) ... ok
+test_country_missing_and_conflicting (test_pipeline.BlockingFeatureTests.test_country_missing_and_conflicting) ... ok
+test_dense_name_block_still_uses_specific_address (test_pipeline.BlockingFeatureTests.test_dense_name_block_still_uses_specific_address) ... ok
+test_empty_feature_contract (test_pipeline.BlockingFeatureTests.test_empty_feature_contract) ... ok
+test_feature_unknown_ids_fail (test_pipeline.BlockingFeatureTests.test_feature_unknown_ids_fail) ... ok
+test_missing_values_do_not_match (test_pipeline.BlockingFeatureTests.test_missing_values_do_not_match) ... ok
+test_recall_counts_missed_entities (test_pipeline.BlockingFeatureTests.test_recall_counts_missed_entities) ... ok
+test_street_conflict_penalizes_baseline (test_pipeline.BlockingFeatureTests.test_street_conflict_penalizes_baseline) ... ok
+test_aggregate_sorted_unique_and_empty (test_pipeline.EvaluationTests.test_aggregate_sorted_unique_and_empty) ... ok
+test_evaluation_requires_coverage (test_pipeline.EvaluationTests.test_evaluation_requires_coverage) ... ok
+test_f05_hand_calculation_and_singletons (test_pipeline.EvaluationTests.test_f05_hand_calculation_and_singletons) ... ok
+test_reject_all_including_score_one (test_pipeline.EvaluationTests.test_reject_all_including_score_one) ... ok
+test_threshold_empty_and_bad_scores (test_pipeline.EvaluationTests.test_threshold_empty_and_bad_scores) ... ok
+test_threshold_sweep_matches_brute_force (test_pipeline.EvaluationTests.test_threshold_sweep_matches_brute_force) ... ok
+test_zero_errors_replaces_stale_dump (test_pipeline.EvaluationTests.test_zero_errors_replaces_stale_dump) ... ok
+test_ambiguous_tsv_schema_rejected (test_pipeline.InputTests.test_ambiguous_tsv_schema_rejected) ... ok
+test_bad_ids_rejected (test_pipeline.InputTests.test_bad_ids_rejected) ... ok
+test_config_rejects_bad_values (test_pipeline.InputTests.test_config_rejects_bad_values) ... ok
+test_duplicate_truth_rows_rejected (test_pipeline.InputTests.test_duplicate_truth_rows_rejected) ... ok
+test_literal_na_and_leading_zeros (test_pipeline.InputTests.test_literal_na_and_leading_zeros) ... ok
+test_malformed_lists_rejected (test_pipeline.InputTests.test_malformed_lists_rejected) ... ok
+test_missing_id_column (test_pipeline.InputTests.test_missing_id_column) ... ok
+test_overlapping_target_ids (test_pipeline.InputTests.test_overlapping_target_ids) ... ok
+test_truth_partial_and_singleton (test_pipeline.InputTests.test_truth_partial_and_singleton) ... ok
+test_truth_unknown_ids (test_pipeline.InputTests.test_truth_unknown_ids) ... ok
+test_country_and_number (test_pipeline.NormalizationTests.test_country_and_number) ... ok
+test_does_not_mutate_input (test_pipeline.NormalizationTests.test_does_not_mutate_input) ... ok
+test_normalization (test_pipeline.NormalizationTests.test_normalization) ... ok
+test_soundex (test_pipeline.NormalizationTests.test_soundex) ... ok
+test_baseline_train_predict_and_debug_artifacts (test_pipeline.TrainingIntegrationTests.test_baseline_train_predict_and_debug_artifacts) ... 2026-09-27 11:21:27,474 INFO Starting load
+2026-09-27 11:21:27,492 INFO Finished load (0.013s)
+2026-09-27 11:21:27,492 INFO Starting normalize
+2026-09-27 11:21:27,492 INFO Finished normalize (0.007s)
+2026-09-27 11:21:27,492 INFO Starting block
+2026-09-27 11:21:27,506 INFO Finished block (0.009s)
+2026-09-27 11:21:27,506 INFO Starting features
+2026-09-27 11:21:27,522 INFO Finished features (0.012s)
+2026-09-27 11:21:27,522 INFO Starting score
+2026-09-27 11:21:27,522 INFO Finished score (0.007s)
+2026-09-27 11:21:27,522 INFO Starting validate
+2026-09-27 11:21:27,546 INFO Finished validate (0.016s)
+2026-09-27 11:21:27,546 INFO Starting evaluate
+2026-09-27 11:21:27,546 INFO Macro F0.5: 1.000000; blocking recall: 1.0
+2026-09-27 11:21:27,546 INFO Finished evaluate (0.002s)
+2026-09-27 11:21:27,550 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmpl8zyc6c9\baseline
+2026-09-27 11:21:27,550 INFO Starting load
+2026-09-27 11:21:27,554 INFO Finished load (0.013s)
+2026-09-27 11:21:27,554 INFO Starting normalize
+2026-09-27 11:21:27,569 INFO Finished normalize (0.004s)
+2026-09-27 11:21:27,569 INFO Starting block
+2026-09-27 11:21:27,571 INFO Finished block (0.008s)
+2026-09-27 11:21:27,571 INFO Starting features
+2026-09-27 11:21:27,571 INFO Finished features (0.006s)
+2026-09-27 11:21:27,571 INFO Starting train
+2026-09-27 11:21:27,681 INFO Saved model to C:\Users\Aditya\AppData\Local\Temp\tmpl8zyc6c9\trained\model.joblib
+2026-09-27 11:21:27,681 INFO Finished train (0.102s)
+2026-09-27 11:21:27,681 INFO Starting score
+2026-09-27 11:21:27,681 INFO Finished score (0.007s)
+2026-09-27 11:21:27,681 INFO Starting validate
+2026-09-27 11:21:27,697 INFO Finished validate (0.014s)
+2026-09-27 11:21:27,697 INFO Starting evaluate
+2026-09-27 11:21:27,697 WARNING Evaluation overlaps training entities. This is not an independent test score; use training.cross_validation for OOF tuning diagnostics.
+2026-09-27 11:21:27,697 INFO Macro F0.5: 1.000000; blocking recall: 1.0
+2026-09-27 11:21:27,697 INFO Finished evaluate (0.002s)
+2026-09-27 11:21:27,713 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmpl8zyc6c9\trained
+2026-09-27 11:21:27,714 INFO Starting load
+2026-09-27 11:21:27,729 INFO Finished load (0.013s)
+2026-09-27 11:21:27,729 INFO Starting normalize
+2026-09-27 11:21:27,729 INFO Finished normalize (0.004s)
+2026-09-27 11:21:27,729 INFO Starting block
+2026-09-27 11:21:27,729 INFO Finished block (0.007s)
+2026-09-27 11:21:27,729 INFO Starting features
+2026-09-27 11:21:27,745 INFO Finished features (0.006s)
+2026-09-27 11:21:27,745 INFO Starting score
+2026-09-27 11:21:27,745 INFO Finished score (0.007s)
+2026-09-27 11:21:27,745 INFO Starting validate
+2026-09-27 11:21:27,761 INFO Finished validate (0.015s)
+2026-09-27 11:21:27,761 INFO Starting evaluate
+2026-09-27 11:21:27,761 WARNING Evaluation overlaps training entities. This is not an independent test score; use training.cross_validation for OOF tuning diagnostics.
+2026-09-27 11:21:27,761 INFO Macro F0.5: 1.000000; blocking recall: 1.0
+2026-09-27 11:21:27,761 INFO Finished evaluate (0.003s)
+2026-09-27 11:21:27,761 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmpl8zyc6c9\predicted
+ok
+test_cli_and_error_exit (test_pipeline.TrainingIntegrationTests.test_cli_and_error_exit) ... ok
+test_empty_sources_end_to_end (test_pipeline.TrainingIntegrationTests.test_empty_sources_end_to_end) ... 2026-09-27 11:21:42,393 INFO Starting load
+2026-09-27 11:21:42,407 INFO Finished load (0.011s)
+2026-09-27 11:21:42,407 INFO Starting normalize
+2026-09-27 11:21:42,407 INFO Finished normalize (0.003s)
+2026-09-27 11:21:42,407 INFO Starting block
+2026-09-27 11:21:42,407 INFO Finished block (0.003s)
+2026-09-27 11:21:42,407 INFO Starting features
+2026-09-27 11:21:42,407 INFO Finished features (0.001s)
+2026-09-27 11:21:42,407 INFO Starting score
+2026-09-27 11:21:42,423 INFO Finished score (0.005s)
+2026-09-27 11:21:42,423 INFO Starting validate
+2026-09-27 11:21:42,423 INFO Finished validate (0.013s)
+2026-09-27 11:21:42,439 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmpzgzesrfd\empty-output
+ok
+test_failure_report (test_pipeline.TrainingIntegrationTests.test_failure_report) ... 2026-09-27 11:21:42,439 INFO Starting load
+2026-09-27 11:21:42,455 ERROR Pipeline failed
+Traceback (most recent call last):
+  File "D:\aws_hackathon\Businness-Enitity-Resolution\code\business_entity_resolution\src\pipeline.py", line 70, in execute_pipeline
+    source, targets, profiles = load_sources(s1_path, s2_path, s3_path)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\aws_hackathon\Businness-Enitity-Resolution\code\business_entity_resolution\src\data_io.py", line 42, in load_sources
+    raise ValueError(f"Sources 2 and 3 must have globally unique target IDs; collisions: {sorted(overlap)[:5]}")
+ValueError: Sources 2 and 3 must have globally unique target IDs; collisions: ['S2_001', 'S2_002', 'S2_003', 'S2_005', 'S2_006']
+ok
+test_model_schema_mismatch (test_pipeline.TrainingIntegrationTests.test_model_schema_mismatch) ... ok
+test_no_candidates_still_covers_source (test_pipeline.TrainingIntegrationTests.test_no_candidates_still_covers_source) ... 2026-09-27 11:21:42,471 INFO Starting load
+2026-09-27 11:21:42,486 INFO Finished load (0.013s)
+2026-09-27 11:21:42,486 INFO Starting normalize
+2026-09-27 11:21:42,502 INFO Finished normalize (0.004s)
+2026-09-27 11:21:42,502 INFO Starting block
+2026-09-27 11:21:42,502 INFO Finished block (0.004s)
+2026-09-27 11:21:42,502 INFO Starting features
+2026-09-27 11:21:42,502 INFO Finished features (0.001s)
+2026-09-27 11:21:42,502 INFO Starting score
+2026-09-27 11:21:42,502 INFO Finished score (0.005s)
+2026-09-27 11:21:42,502 INFO Starting validate
+2026-09-27 11:21:42,528 INFO Finished validate (0.015s)
+2026-09-27 11:21:42,530 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmpzh78efcp\no-candidates
+ok
+test_output_reuse_rejected (test_pipeline.TrainingIntegrationTests.test_output_reuse_rejected) ... ok
+test_packaged_code_and_model_run_from_fresh_directory (test_pipeline.TrainingIntegrationTests.test_packaged_code_and_model_run_from_fresh_directory) ... 2026-09-27 11:21:42,550 INFO Starting load
+2026-09-27 11:21:42,566 INFO Finished load (0.016s)
+2026-09-27 11:21:42,566 INFO Starting normalize
+2026-09-27 11:21:42,566 INFO Finished normalize (0.005s)
+2026-09-27 11:21:42,566 INFO Starting block
+2026-09-27 11:21:42,582 INFO Finished block (0.009s)
+2026-09-27 11:21:42,582 INFO Starting features
+2026-09-27 11:21:42,582 INFO Finished features (0.008s)
+2026-09-27 11:21:42,582 INFO Starting train
+2026-09-27 11:21:42,662 INFO Saved model to C:\Users\Aditya\AppData\Local\Temp\tmppnjskrla\trained\model.joblib
+2026-09-27 11:21:42,662 INFO Finished train (0.072s)
+2026-09-27 11:21:42,662 INFO Starting score
+2026-09-27 11:21:42,662 INFO Finished score (0.009s)
+2026-09-27 11:21:42,662 INFO Starting validate
+2026-09-27 11:21:42,694 INFO Finished validate (0.018s)
+2026-09-27 11:21:42,694 INFO Starting evaluate
+2026-09-27 11:21:42,696 WARNING Evaluation overlaps training entities. This is not an independent test score; use training.cross_validation for OOF tuning diagnostics.
+2026-09-27 11:21:42,696 INFO Macro F0.5: 1.000000; blocking recall: 1.0
+2026-09-27 11:21:42,696 INFO Finished evaluate (0.003s)
+2026-09-27 11:21:42,698 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmppnjskrla\trained
+ok
+test_reject_model_output_collision (test_pipeline.TrainingIntegrationTests.test_reject_model_output_collision) ... ok
+test_shared_truth_targets_grouped_transitively (test_pipeline.TrainingIntegrationTests.test_shared_truth_targets_grouped_transitively) ... ok
+test_single_class_training_rejected (test_pipeline.TrainingIntegrationTests.test_single_class_training_rejected) ... ok
+test_training_partial_labels_and_roundtrip (test_pipeline.TrainingIntegrationTests.test_training_partial_labels_and_roundtrip) ... ok
+test_validator_rejects_non_candidate_match (test_pipeline.TrainingIntegrationTests.test_validator_rejects_non_candidate_match) ... 2026-09-27 11:21:48,099 INFO Starting load
+2026-09-27 11:21:48,115 INFO Finished load (0.012s)
+2026-09-27 11:21:48,115 INFO Starting normalize
+2026-09-27 11:21:48,131 INFO Finished normalize (0.004s)
+2026-09-27 11:21:48,131 INFO Starting block
+2026-09-27 11:21:48,131 INFO Finished block (0.006s)
+2026-09-27 11:21:48,131 INFO Starting features
+2026-09-27 11:21:48,131 INFO Finished features (0.008s)
+2026-09-27 11:21:48,147 INFO Starting score
+2026-09-27 11:21:48,147 INFO Finished score (0.008s)
+2026-09-27 11:21:48,147 INFO Starting validate
+2026-09-27 11:21:48,163 INFO Finished validate (0.017s)
+2026-09-27 11:21:48,163 INFO Completed successfully; artifacts: C:\Users\Aditya\AppData\Local\Temp\tmp4v1ym81n\run
+ok
+
+----------------------------------------------------------------------
+Ran 43 tests in 21.015s
+
+OK
+Macro F0.5: 1.000000 over 1 entities
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[PASS] Output schemas, coverage, IDs and candidate membership are valid.
+[FAIL] Match was not a candidate for S1_011

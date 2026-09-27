@@ -1,39 +1,47 @@
+"""ML-2: ordered, versioned feature contract shared with persisted models."""
 import pandas as pd
 from rapidfuzz import fuzz
-from tqdm import tqdm
+from rapidfuzz.distance import JaroWinkler
+from blocking import PAIR_COLUMNS
 
-def compute_pairwise_features(pairs_df: pd.DataFrame, s1_df: pd.DataFrame, tgt_df: pd.DataFrame) -> pd.DataFrame:
+FEATURE_VERSION = 1
+FEATURE_COLUMNS = ["token_sort", "name_token_set", "name_jaro_winkler", "name_ratio", "name_jaccard", "address_ratio", "address_token_sort", "address_jaccard", "street_number_match", "street_number_conflict", "city_match", "state_match", "postal_code_match", "country_match", "name_present", "address_present"]
+
+
+def jaccard(a, b):
+    left, right = set(a.split()), set(b.split())
+    return len(left & right) / len(left | right) if left and right else 0.0
+
+
+def exact(a, b):
+    return float(bool(a and b) and a == b)
+
+
+def compute_pairwise_features(pairs_df, s1_df, tgt_df):
     if pairs_df.empty:
-        return pd.DataFrame(columns=["source1_entity_id", "target_entity_id", "token_sort", "address_ratio"])
-
-    name_map_s1 = dict(zip(s1_df["entity_id"], s1_df["norm_business_name"].fillna("")))
-    addr_map_s1 = dict(zip(s1_df["entity_id"], s1_df["norm_business_address"].fillna("")))
-
-    name_map_tgt = dict(zip(tgt_df["entity_id"], tgt_df["norm_business_name"].fillna("")))
-    addr_map_tgt = dict(zip(tgt_df["entity_id"], tgt_df["norm_business_address"].fillna("")))
-
-    s1_ids = pairs_df["source1_entity_id"].tolist()
-    tgt_ids = pairs_df["target_entity_id"].tolist()
-
-    token_sorts = []
-    addr_ratios = []
-
-    print(f"      Scoring {len(pairs_df)} candidate pairs...")
-    for s1_id, tgt_id in zip(s1_ids, tgt_ids):
-        n1 = name_map_s1.get(s1_id, "")
-        n2 = name_map_tgt.get(tgt_id, "")
-        a1 = addr_map_s1.get(s1_id, "")
-        a2 = addr_map_tgt.get(tgt_id, "")
-
-        # Fast string metric
-        token_sorts.append(fuzz.token_sort_ratio(n1, n2) / 100.0)
-        addr_ratios.append(fuzz.ratio(a1, a2) / 100.0)
-
-    features_df = pd.DataFrame({
-        "source1_entity_id": s1_ids,
-        "target_entity_id": tgt_ids,
-        "token_sort": token_sorts,
-        "address_ratio": addr_ratios
-    })
-
-    return features_df
+        return pd.DataFrame(columns=PAIR_COLUMNS + FEATURE_COLUMNS)
+    if s1_df.entity_id.duplicated().any() or tgt_df.entity_id.duplicated().any():
+        raise ValueError("Feature lookup requires unique entity IDs")
+    sources = s1_df.set_index("entity_id").to_dict("index")
+    targets = tgt_df.set_index("entity_id").to_dict("index")
+    rows = []
+    for source_id, target_id in pairs_df[PAIR_COLUMNS].itertuples(index=False, name=None):
+        if source_id not in sources or target_id not in targets:
+            raise ValueError(f"Candidate references unknown entity: {source_id}, {target_id}")
+        s, t = sources[source_id], targets[target_id]
+        n1, n2 = s["norm_business_name"], t["norm_business_name"]
+        a1, a2 = s["norm_business_address"], t["norm_business_address"]
+        names, addresses = bool(n1 and n2), bool(a1 and a2)
+        num1, num2 = s["street_number"], t["street_number"]
+        rows.append([source_id, target_id,
+            fuzz.token_sort_ratio(n1, n2) / 100 if names else 0.0,
+            fuzz.token_set_ratio(n1, n2) / 100 if names else 0.0,
+            JaroWinkler.normalized_similarity(n1, n2) if names else 0.0,
+            fuzz.ratio(n1, n2) / 100 if names else 0.0,
+            jaccard(n1, n2),
+            fuzz.ratio(a1, a2) / 100 if addresses else 0.0,
+            fuzz.token_sort_ratio(a1, a2) / 100 if addresses else 0.0,
+            jaccard(a1, a2), exact(num1, num2), float(bool(num1 and num2) and num1 != num2),
+            *[exact(s[f"norm_{col}"], t[f"norm_{col}"]) for col in ("city", "state", "postal_code", "country")],
+            float(names), float(addresses)])
+    return pd.DataFrame(rows, columns=PAIR_COLUMNS + FEATURE_COLUMNS)
