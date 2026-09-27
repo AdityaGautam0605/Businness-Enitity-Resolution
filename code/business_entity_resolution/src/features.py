@@ -23,6 +23,8 @@ def compute_pairwise_features(
     s1_df,
     tgt_df,
     chunk_size=100000,
+    source_index=None,
+    target_index=None,
 ):
     if pairs_df.empty:
         return pd.DataFrame(
@@ -61,12 +63,14 @@ def compute_pairwise_features(
     # keeping the actual records inside the existing DataFrames.
     # ---------------------------------------------------------
 
-    source_index = pd.Index(
+    if source_index is None:
+        source_index = pd.Index(
         s1_df["entity_id"],
         copy=False,
     )
 
-    target_index = pd.Index(
+    if target_index is None:
+        target_index = pd.Index(
         tgt_df["entity_id"],
         copy=False,
     )
